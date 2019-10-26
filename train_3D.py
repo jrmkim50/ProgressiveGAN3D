@@ -149,7 +149,6 @@ def train_progressive_gan(
 
     maintenance_start_time = time.time()
     training_set = dataset_3D.load_dataset(data_dir=config_3D.data_dir, verbose=True, **config_3D.dataset)
-    print('Size of training set is  ',training_set.shape)
     
     # Construct networks.
     with tf.device('/gpu:0'):
@@ -196,9 +195,7 @@ def train_progressive_gan(
     grid_size, grid_reals, grid_labels, grid_latents = setup_snapshot_image_grid(G, training_set, **config_3D.grid)
     sched = TrainingSchedule(total_kimg * 1000, training_set, **config_3D.sched)
     
-    print("Sched.minibatch is ",sched.minibatch)
-    print("Num gpus is ",config_3D.num_gpus)
-    grid_fakes = Gs.run(grid_latents, grid_labels, minibatch_size=sched.minibatch//config_3D.num_gpus)
+    #grid_fakes = Gs.run(grid_latents, grid_labels, minibatch_size=sched.minibatch//config_3D.num_gpus)
 
     print('Setting up result dir...')
     result_subdir = misc_3D.create_result_subdir(config_3D.result_dir, config_3D.desc)
@@ -230,9 +227,9 @@ def train_progressive_gan(
         # Run training ops.
         for repeat in range(minibatch_repeats):
             for _ in range(D_repeats):
-                tfutil.run([D_train_op, Gs_update_op], {lod_in: sched.lod, lrate_in: sched.D_lrate, minibatch_in: sched.minibatch})
+                tfutil_3D.run([D_train_op, Gs_update_op], {lod_in: sched.lod, lrate_in: sched.D_lrate, minibatch_in: sched.minibatch})
                 cur_nimg += sched.minibatch
-            tfutil.run([G_train_op], {lod_in: sched.lod, lrate_in: sched.G_lrate, minibatch_in: sched.minibatch})
+            tfutil_3D.run([G_train_op], {lod_in: sched.lod, lrate_in: sched.G_lrate, minibatch_in: sched.minibatch})
 
         # Perform maintenance tasks once per tick.
         done = (cur_nimg >= total_kimg * 1000)
@@ -248,17 +245,17 @@ def train_progressive_gan(
 
             # Report progress.
             print('tick %-5d kimg %-8.1f lod %-5.2f minibatch %-4d time %-12s sec/tick %-7.1f sec/kimg %-7.2f maintenance %.1f' % (
-                tfutil.autosummary('Progress/tick', cur_tick),
-                tfutil.autosummary('Progress/kimg', cur_nimg / 1000.0),
-                tfutil.autosummary('Progress/lod', sched.lod),
-                tfutil.autosummary('Progress/minibatch', sched.minibatch),
-                misc.format_time(tfutil.autosummary('Timing/total_sec', total_time)),
-                tfutil.autosummary('Timing/sec_per_tick', tick_time),
-                tfutil.autosummary('Timing/sec_per_kimg', tick_time / tick_kimg),
-                tfutil.autosummary('Timing/maintenance_sec', maintenance_time)))
-            tfutil.autosummary('Timing/total_hours', total_time / (60.0 * 60.0))
-            tfutil.autosummary('Timing/total_days', total_time / (24.0 * 60.0 * 60.0))
-            tfutil.save_summaries(summary_log, cur_nimg)
+                tfutil_3D.autosummary('Progress/tick', cur_tick),
+                tfutil_3D.autosummary('Progress/kimg', cur_nimg / 1000.0),
+                tfutil_3D.autosummary('Progress/lod', sched.lod),
+                tfutil_3D.autosummary('Progress/minibatch', sched.minibatch),
+                misc_3D.format_time(tfutil.autosummary('Timing/total_sec', total_time)),
+                tfutil_3D.autosummary('Timing/sec_per_tick', tick_time),
+                tfutil_3D.autosummary('Timing/sec_per_kimg', tick_time / tick_kimg),
+                tfutil_3D.autosummary('Timing/maintenance_sec', maintenance_time)))
+            tfutil_3D.autosummary('Timing/total_hours', total_time / (60.0 * 60.0))
+            tfutil_3D.autosummary('Timing/total_days', total_time / (24.0 * 60.0 * 60.0))
+            tfutil_3D.save_summaries(summary_log, cur_nimg)
 
             # Save snapshots.
             if cur_tick % image_snapshot_ticks == 0 or done:
