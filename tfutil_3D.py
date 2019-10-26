@@ -629,6 +629,7 @@ class Network:
         out_dtype       = None,     # Convert the output to the specified data type.
         **dynamic_kwargs):          # Additional keyword arguments to pass into the network construction function.
 
+        print("in arrays has size ",in_arrays[0].shape)
         assert len(in_arrays) == self.num_inputs
         num_items = in_arrays[0].shape[0]
         if minibatch_size is None:
@@ -659,6 +660,7 @@ class Network:
                 self._run_cache[key] = [tf.concat(outputs, axis=0) for outputs in zip(*out_split)]
 
         # Run minibatches.
+        print("num items is ",num_items)
         out_expr = self._run_cache[key]
         out_arrays = [np.empty([num_items] + shape_to_list(expr.shape)[1:], expr.dtype.name) for expr in out_expr]
         for mb_begin in range(0, num_items, minibatch_size):
