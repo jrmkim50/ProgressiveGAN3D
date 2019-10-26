@@ -16,8 +16,8 @@ import numpy as np
 import tensorflow as tf
 import PIL.Image
 
-import tfutil
-import dataset
+import tfutil_3D
+import dataset_3D
 
 #----------------------------------------------------------------------------
 
@@ -84,6 +84,33 @@ class TFRecordExporter:
             tfr_writer.write(ex.SerializeToString())
         self.cur_images += 1
 
+    def add_volume(self, vol):
+        if self.print_progress and self.cur_images % self.progress_interval == 0:
+            print('%d / %d\r' % (self.cur_images, self.expected_images), end='', flush=True)
+        if self.shape is None:
+            self.shape = vol.shape
+            self.resolution_log2 = int(np.log2(self.shape[1]))
+            assert self.shape[0] == 1
+            assert self.shape[1] == self.shape[2]
+            assert self.shape[2] == self.shape[3]
+            assert self.shape[1] == 2**self.resolution_log2
+            tfr_opt = tf.python_io.TFRecordOptions(tf.python_io.TFRecordCompressionType.NONE)
+            for lod in range(self.resolution_log2 - 1):
+                tfr_file = self.tfr_prefix + '-r%02d.tfrecords' % (self.resolution_log2 - lod)
+                self.tfr_writers.append(tf.python_io.TFRecordWriter(tfr_file, tfr_opt))
+        assert vol.shape == self.shape
+        for lod, tfr_writer in enumerate(self.tfr_writers):
+            if lod:
+                vol = vol.astype(np.float32)
+                vol = (vol[:, 0::2, 0::2, 0::2] + vol[:, 0::2, 1::2, 0::2] + vol[:, 1::2, 0::2, 0::2] + vol[:, 1::2, 1::2, 0::2]  +  vol[:, 0::2, 0::2, 1::2] + vol[:, 0::2, 1::2, 1::2] + vol[:, 1::2, 0::2, 1::2] + vol[:, 1::2, 1::2, 1::2]   ) * 0.125
+            quant = np.rint(vol).clip(0, 255).astype(np.uint8)
+            ex = tf.train.Example(features=tf.train.Features(feature={
+                'shape': tf.train.Feature(int64_list=tf.train.Int64List(value=quant.shape)),
+                'data': tf.train.Feature(bytes_list=tf.train.BytesList(value=[quant.tostring()]))}))
+            tfr_writer.write(ex.SerializeToString())
+        self.cur_images += 1
+        
+        
     def add_labels(self, labels):
         if self.print_progress:
             print('%-40s\r' % 'Saving labels...', end='', flush=True)
@@ -335,6 +362,8 @@ def create_cifar10(tfrecord_dir, cifar10_dir):
         labels.append(data['labels'])
     images = np.concatenate(images)
     labels = np.concatenate(labels)
+    labels = labels.astype('int32')
+    
     assert images.shape == (50000, 3, 32, 32) and images.dtype == np.uint8
     assert labels.shape == (50000,) and labels.dtype == np.int32
     assert np.min(images) == 0 and np.max(images) == 255
@@ -621,6 +650,39 @@ def create_from_images(tfrecord_dir, image_dir, shuffle):
                 img = img.transpose(2, 0, 1) # HWC => CHW
             tfr.add_image(img)
 
+import nibabel as nib
+            
+def create_from_nifti(tfrecord_dir, nifti_dir, shuffle):
+    print('Loading nifti files from "%s"' % nifti_dir)
+    nifti_filenames = sorted(glob.glob(os.path.join(nifti_dir, '*')))
+
+    if len(nifti_filenames) == 0:
+        error('No nifti files found')
+
+    vol = nib.load(nifti_filenames[0])
+    resolution = vol.shape[0]
+    print("Shape is ",vol.shape)
+    print("Resolution is ",resolution)
+    channels = vol.shape[3] if vol.ndim == 4 else 1
+    if vol.shape[1] != resolution:
+        error('Input volume must have same width and height')
+    if vol.shape[2] != resolution:
+        error('Input volume must have same width and depth')
+    if resolution != 2 ** int(np.floor(np.log2(resolution))):
+        error('Input volume resolution must be a power-of-two')
+    if channels != 1:
+        error('Number of channels must be 1')
+
+    with TFRecordExporter(tfrecord_dir, len(nifti_filenames)) as tfr:
+        order = tfr.choose_shuffled_order() if shuffle else np.arange(len(nifti_filenames))
+        for idx in range(order.size):
+            vol = nib.load(nifti_filenames[order[idx]]).get_fdata()
+            vol = vol[np.newaxis, :, :, :] # DHW => CDHW
+            tfr.add_volume(vol)
+        
+
+    
+            
 #----------------------------------------------------------------------------
 
 def create_from_hdf5(tfrecord_dir, hdf5_filename, shuffle):
@@ -720,6 +782,13 @@ def execute_cmdline(argv):
     p.add_argument(     'tfrecord_dir',     help='New dataset directory to be created')
     p.add_argument(     'image_dir',        help='Directory containing the images')
     p.add_argument(     '--shuffle',        help='Randomize image order (default: 1)', type=int, default=1)
+
+    p = add_command(    'create_from_nifti', 'Create dataset from a directory full of nifit files.',
+                                            'create_from_nifti datasets/mydataset myniftidir')
+    p.add_argument(     'tfrecord_dir',     help='New dataset directory to be created')
+    p.add_argument(     'nifti_dir',        help='Directory containing the nifti files')
+    p.add_argument(     '--shuffle',        help='Randomize nifti order (default: 1)', type=int, default=1)
+    
 
     p = add_command(    'create_from_hdf5', 'Create dataset from legacy HDF5 archive.',
                                             'create_from_hdf5 datasets/celebahq ~/downloads/celeba-hq-1024x1024.h5')
