@@ -14,6 +14,8 @@ import numpy as np
 from collections import OrderedDict
 import tensorflow as tf
 
+from tensorflow.python.ops.nccl_ops import all_sum
+
 #----------------------------------------------------------------------------
 # Convenience.
 
@@ -328,7 +330,7 @@ class Optimizer:
                     for var_idx, grad_shape in enumerate(self._grad_shapes):
                         g = [dev_grads[dev][var_idx][0] for dev in devices]
                         if np.prod(grad_shape): # nccl does not support zero-sized tensors
-                            g = tf.contrib.nccl.all_sum(g)
+                            g = all_sum(g)
                         for dev, gg in zip(devices, g):
                             dev_grads[dev][var_idx] = (gg, dev_grads[dev][var_idx][1])
 
@@ -629,7 +631,6 @@ class Network:
         out_dtype       = None,     # Convert the output to the specified data type.
         **dynamic_kwargs):          # Additional keyword arguments to pass into the network construction function.
 
-        print("in arrays has size ",in_arrays[0].shape)
         assert len(in_arrays) == self.num_inputs
         num_items = in_arrays[0].shape[0]
         if minibatch_size is None:
@@ -660,17 +661,14 @@ class Network:
                 self._run_cache[key] = [tf.concat(outputs, axis=0) for outputs in zip(*out_split)]
 
         # Run minibatches.
-        print("num items is ",num_items)
         out_expr = self._run_cache[key]
         out_arrays = [np.empty([num_items] + shape_to_list(expr.shape)[1:], expr.dtype.name) for expr in out_expr]
         for mb_begin in range(0, num_items, minibatch_size):
-            print("mb_begin is ",mb_begin)
             if print_progress:
                 print('\r%d / %d' % (mb_begin, num_items), end='')
             mb_end = min(mb_begin + minibatch_size, num_items)
             mb_in = [src[mb_begin : mb_end] for src in in_arrays]
             mb_out = tf.get_default_session().run(out_expr, dict(zip(self.input_templates, mb_in)))
-            print("mb_end is ",mb_end)
             for dst, src in zip(out_arrays, mb_out):
                 dst[mb_begin : mb_end] = src
 

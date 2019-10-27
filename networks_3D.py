@@ -183,7 +183,7 @@ def G_paper(
             if res == 2: # 4x4x4
                 if normalize_latents: x = pixel_norm(x, epsilon=pixelnorm_epsilon)
                 with tf.variable_scope('Dense'):
-                    x = dense(x, fmaps=nf(res-1)*16, gain=np.sqrt(2)/4, use_wscale=use_wscale) # override gain to match the original Theano implementation
+                    x = dense(x, fmaps=nf(res-1)*64, gain=np.sqrt(2)/4, use_wscale=use_wscale) # override gain to match the original Theano implementation
                     x = tf.reshape(x, [-1, nf(res-1), 4, 4, 4])
                     x = PN(act(apply_bias(x)))
                 with tf.variable_scope('Conv'):

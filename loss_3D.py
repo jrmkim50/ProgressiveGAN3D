@@ -56,6 +56,7 @@ def D_wgangp_acgan(G, D, opt, training_set, minibatch_size, reals, labels,
 
     with tf.name_scope('GradientPenalty'):
         mixing_factors = tf.random_uniform([minibatch_size, 1, 1, 1, 1], 0.0, 1.0, dtype=fake_images_out.dtype)
+        #arne = fake_images_out - tf.cast(reals, fake_images_out.dtype) 
         mixed_images_out = tfutil_3D.lerp(tf.cast(reals, fake_images_out.dtype), fake_images_out, mixing_factors)
         mixed_scores_out, mixed_labels_out = fp32(D.get_output_for(mixed_images_out, is_training=True))
         mixed_scores_out = tfutil_3D.autosummary('Loss/mixed_scores', mixed_scores_out)

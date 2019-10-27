@@ -678,6 +678,7 @@ def create_from_nifti(tfrecord_dir, nifti_dir, shuffle):
         for idx in range(order.size):
             vol = nib.load(nifti_filenames[order[idx]]).get_fdata()
             vol = vol[np.newaxis, :, :, :] # DHW => CDHW
+            print("Size of vol is ",vol.shape)
             tfr.add_volume(vol)
         
 

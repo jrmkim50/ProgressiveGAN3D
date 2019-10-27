@@ -90,7 +90,7 @@ class TrainingSchedule:
         lod_initial_resolution  = 4,        # Image resolution used at the beginning.
         lod_training_kimg       = 600,      # Thousands of real images to show before doubling the resolution.
         lod_transition_kimg     = 600,      # Thousands of real images to show when fading in new layers.
-        minibatch_base          = 16,       # Maximum minibatch size, divided evenly among GPUs.
+        minibatch_base          = 4,       # Maximum minibatch size, divided evenly among GPUs.
         minibatch_dict          = {},       # Resolution-specific overrides.
         max_minibatch_per_gpu   = {},       # Resolution-specific maximum minibatch size per GPU.
         G_lrate_base            = 0.001,    # Learning rate for the generator.
@@ -195,7 +195,7 @@ def train_progressive_gan(
     grid_size, grid_reals, grid_labels, grid_latents = setup_snapshot_image_grid(G, training_set, **config_3D.grid)
     sched = TrainingSchedule(total_kimg * 1000, training_set, **config_3D.sched)
     
-    #grid_fakes = Gs.run(grid_latents, grid_labels, minibatch_size=sched.minibatch//config_3D.num_gpus)
+    grid_fakes = Gs.run(grid_latents, grid_labels, minibatch_size=sched.minibatch//config_3D.num_gpus)
 
     print('Setting up result dir...')
     result_subdir = misc_3D.create_result_subdir(config_3D.result_dir, config_3D.desc)
@@ -249,7 +249,7 @@ def train_progressive_gan(
                 tfutil_3D.autosummary('Progress/kimg', cur_nimg / 1000.0),
                 tfutil_3D.autosummary('Progress/lod', sched.lod),
                 tfutil_3D.autosummary('Progress/minibatch', sched.minibatch),
-                misc_3D.format_time(tfutil.autosummary('Timing/total_sec', total_time)),
+                misc_3D.format_time(tfutil_3D.autosummary('Timing/total_sec', total_time)),
                 tfutil_3D.autosummary('Timing/sec_per_tick', tick_time),
                 tfutil_3D.autosummary('Timing/sec_per_kimg', tick_time / tick_kimg),
                 tfutil_3D.autosummary('Timing/maintenance_sec', maintenance_time)))
@@ -259,8 +259,8 @@ def train_progressive_gan(
 
             # Save snapshots.
             if cur_tick % image_snapshot_ticks == 0 or done:
-                grid_fakes = Gs.run(grid_latents, grid_labels, minibatch_size=sched.minibatch//config.num_gpus)
-                misc_3D.save_image_grid(grid_fakes, os.path.join(result_subdir, 'fakes%06d.png' % (cur_nimg // 1000)), drange=drange_net, grid_size=grid_size)
+                grid_fakes = Gs.run(grid_latents, grid_labels, minibatch_size=sched.minibatch//config_3D.num_gpus)
+                #misc_3D.save_image_grid(grid_fakes, os.path.join(result_subdir, 'fakes%06d.png' % (cur_nimg // 1000)), drange=drange_net, grid_size=grid_size)
             if cur_tick % network_snapshot_ticks == 0 or done:
                 misc_3D.save_pkl((G, D, Gs), os.path.join(result_subdir, 'network-snapshot-%06d.pkl' % (cur_nimg // 1000)))
 

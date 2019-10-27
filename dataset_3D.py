@@ -66,7 +66,6 @@ class TFRecordDataset:
         # List tfrecords files and inspect their shapes.
         assert os.path.isdir(self.tfrecord_dir)
         tfr_files = sorted(glob.glob(os.path.join(self.tfrecord_dir, '*.tfrecords')))
-        print("tfr files are ",tfr_files)
         assert len(tfr_files) >= 1
         tfr_shapes = []
         for tfr_file in tfr_files:
@@ -74,8 +73,6 @@ class TFRecordDataset:
             for record in tf.python_io.tf_record_iterator(tfr_file, tfr_opt):
                 tfr_shapes.append(parse_tfrecord_np(record).shape)
                 break
-
-        print("tfr shapes are ",tfr_shapes)
             
         # Autodetect label filename.
         if self.label_file is None:
