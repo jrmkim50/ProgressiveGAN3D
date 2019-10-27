@@ -199,8 +199,8 @@ def train_progressive_gan(
 
     print('Setting up result dir...')
     result_subdir = misc_3D.create_result_subdir(config_3D.result_dir, config_3D.desc)
-    #misc_3D.save_image_grid(grid_reals, os.path.join(result_subdir, 'reals.png'), drange=training_set.dynamic_range, grid_size=grid_size)
-    #misc_3D.save_image_grid(grid_fakes, os.path.join(result_subdir, 'fakes%06d.png' % 0), drange=drange_net, grid_size=grid_size)
+    misc_3D.save_image_grid(grid_reals, os.path.join(result_subdir, 'reals.png'), os.path.join(result_subdir, 'reals.nii.gz'),  drange=training_set.dynamic_range, grid_size=grid_size)
+    misc_3D.save_image_grid(grid_fakes, os.path.join(result_subdir, 'fakes%06d.png' % 0), os.path.join(result_subdir, 'fakes%06d.nii.gz' % 0), drange=drange_net, grid_size=grid_size)
     summary_log = tf.summary.FileWriter(result_subdir)
     if save_tf_graph:
         summary_log.add_graph(tf.get_default_graph())
@@ -260,7 +260,7 @@ def train_progressive_gan(
             # Save snapshots.
             if cur_tick % image_snapshot_ticks == 0 or done:
                 grid_fakes = Gs.run(grid_latents, grid_labels, minibatch_size=sched.minibatch//config_3D.num_gpus)
-                #misc_3D.save_image_grid(grid_fakes, os.path.join(result_subdir, 'fakes%06d.png' % (cur_nimg // 1000)), drange=drange_net, grid_size=grid_size)
+                misc_3D.save_image_grid(grid_fakes, os.path.join(result_subdir, 'fakes%06d.png' % (cur_nimg // 1000)), os.path.join(result_subdir, 'fakes%06d.nii.gz' % (cur_nimg // 1000)), drange=drange_net, grid_size=grid_size)
             if cur_tick % network_snapshot_ticks == 0 or done:
                 misc_3D.save_pkl((G, D, Gs), os.path.join(result_subdir, 'network-snapshot-%06d.pkl' % (cur_nimg // 1000)))
 

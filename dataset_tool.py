@@ -102,8 +102,8 @@ class TFRecordExporter:
         for lod, tfr_writer in enumerate(self.tfr_writers):
             if lod:
                 vol = vol.astype(np.float32)
-                vol = (vol[:, 0::2, 0::2, 0::2] + vol[:, 0::2, 1::2, 0::2] + vol[:, 1::2, 0::2, 0::2] + vol[:, 1::2, 1::2, 0::2]  +  vol[:, 0::2, 0::2, 1::2] + vol[:, 0::2, 1::2, 1::2] + vol[:, 1::2, 0::2, 1::2] + vol[:, 1::2, 1::2, 1::2]   ) * 0.125
-            quant = np.rint(vol).clip(0, 255).astype(np.uint8)
+                vol = (vol[:, 0::2, 0::2, 0::2] + vol[:, 0::2, 1::2, 0::2] + vol[:, 1::2, 0::2, 0::2] + vol[:, 1::2, 1::2, 0::2]  +  vol[:, 0::2, 0::2, 1::2] + vol[:, 0::2, 1::2, 1::2] + vol[:, 1::2, 0::2, 1::2] + vol[:, 1::2, 1::2, 1::2]   ) * 0.125 
+            quant = np.rint(vol).clip(0, 65535).astype(np.uint16)
             ex = tf.train.Example(features=tf.train.Features(feature={
                 'shape': tf.train.Feature(int64_list=tf.train.Int64List(value=quant.shape)),
                 'data': tf.train.Feature(bytes_list=tf.train.BytesList(value=[quant.tostring()]))}))
@@ -678,7 +678,6 @@ def create_from_nifti(tfrecord_dir, nifti_dir, shuffle):
         for idx in range(order.size):
             vol = nib.load(nifti_filenames[order[idx]]).get_fdata()
             vol = vol[np.newaxis, :, :, :] # DHW => CDHW
-            print("Size of vol is ",vol.shape)
             tfr.add_volume(vol)
         
 

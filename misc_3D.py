@@ -42,21 +42,28 @@ def adjust_dynamic_range(data, drange_in, drange_out):
         data = data * scale + bias
     return data
 
+import nibabel as nib
+
+def save_nifti(images, nifti_filename):
+    temp = images.squeeze()
+    nifti = nib.Nifti1Image(temp.transpose(1,2,3,0).astype("float32"), np.eye(4))
+    nib.save(nifti, nifti_filename)
+
 def create_image_grid(images, grid_size=None):
-    assert images.ndim == 3 or images.ndim == 4
-    num, img_w, img_h = images.shape[0], images.shape[-1], images.shape[-2]
+    assert images.ndim == 4 or images.ndim == 5
+    num, img_w, img_h, img_d = images.shape[0], images.shape[-1], images.shape[-2], images.shape[-3]
 
     if grid_size is not None:
         grid_w, grid_h = tuple(grid_size)
     else:
         grid_w = max(int(np.ceil(np.sqrt(num))), 1)
         grid_h = max((num - 1) // grid_w + 1, 1)
-
+            
     grid = np.zeros(list(images.shape[1:-2]) + [grid_h * img_h, grid_w * img_w], dtype=images.dtype)
     for idx in range(num):
         x = (idx % grid_w) * img_w
         y = (idx // grid_w) * img_h
-        grid[..., y : y + img_h, x : x + img_w] = images[idx]
+        grid[..., y : y + img_h, x : x + img_w] = images[idx,:,:,np.round(img_d//2)]
     return grid
 
 def convert_to_pil_image(image, drange=[0,1]):
@@ -79,8 +86,9 @@ def save_image(image, filename, drange=[0,1], quality=95):
     else:
         img.save(filename)
 
-def save_image_grid(images, filename, drange=[0,1], grid_size=None):
-    convert_to_pil_image(create_image_grid(images, grid_size), drange).save(filename)
+def save_image_grid(images, filename, nifti_filename, drange=[0,1], grid_size=None):
+    save_nifti(images, nifti_filename)
+    #convert_to_pil_image(create_image_grid(images, grid_size), drange).save(filename)
 
 #----------------------------------------------------------------------------
 # Logging of stdout and stderr to a file.
