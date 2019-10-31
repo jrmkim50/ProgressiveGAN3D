@@ -88,14 +88,14 @@ class TrainingSchedule:
         cur_nimg,
         training_set,
         lod_initial_resolution  = 4,        # Image resolution used at the beginning.
-        lod_training_kimg       = 600,      # Thousands of real images to show before doubling the resolution.
-        lod_transition_kimg     = 600,      # Thousands of real images to show when fading in new layers.
+        lod_training_kimg       = 6000,  # 600     # Thousands of real images to show before doubling the resolution.
+        lod_transition_kimg     = 6000,  # 600    # Thousands of real images to show when fading in new layers.
         minibatch_base          = 4,       # Maximum minibatch size, divided evenly among GPUs.
         minibatch_dict          = {},       # Resolution-specific overrides.
         max_minibatch_per_gpu   = {},       # Resolution-specific maximum minibatch size per GPU.
-        G_lrate_base            = 0.001,    # Learning rate for the generator.
+        G_lrate_base            = 0.0003,    # Learning rate for the generator.
         G_lrate_dict            = {},       # Resolution-specific overrides.
-        D_lrate_base            = 0.001,    # Learning rate for the discriminator.
+        D_lrate_base            = 0.0003,    # Learning rate for the discriminator.
         D_lrate_dict            = {},       # Resolution-specific overrides.
         tick_kimg_base          = 160,      # Default interval of progress snapshots.
         tick_kimg_dict          = {4: 160, 8:140, 16:120, 32:100, 64:80, 128:60, 256:40, 512:20, 1024:10}): # Resolution-specific overrides.

@@ -151,7 +151,7 @@ def G_paper(
     label_size          = 0,            # Dimensionality of the labels, 0 if no labels. Overridden based on dataset.
     fmap_base           = 8192,         # Overall multiplier for the number of feature maps.
     fmap_decay          = 1.0,          # log2 feature map reduction when doubling the resolution.
-    fmap_max            = 128,          # Maximum number of feature maps in any layer.
+    fmap_max            = 256,          # Maximum number of feature maps in any layer.
     latent_size         = None,         # Dimensionality of the latent vectors. None = min(fmap_base, fmap_max).
     normalize_latents   = True,         # Normalize latent vectors before feeding them to the network?
     use_wscale          = True,         # Enable equalized learning rate?
@@ -240,7 +240,7 @@ def D_paper(
     label_size          = 0,            # Dimensionality of the labels, 0 if no labels. Overridden based on dataset.
     fmap_base           = 8192,         # Overall multiplier for the number of feature maps.
     fmap_decay          = 1.0,          # log2 feature map reduction when doubling the resolution.
-    fmap_max            = 128,          # Maximum number of feature maps in any layer.
+    fmap_max            = 256,          # Maximum number of feature maps in any layer.
     use_wscale          = True,         # Enable equalized learning rate?
     mbstd_group_size    = 4,            # Group size for the minibatch standard deviation layer, 0 = disable.
     dtype               = 'float32',    # Data type to use for activations and outputs.

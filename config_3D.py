@@ -28,9 +28,9 @@ tf_config = EasyDict()  # TensorFlow session config, set by tfutil.init_tf().
 env = EasyDict()        # Environment variables, set by the main program in train.py.
 
 tf_config['graph_options.place_pruned_graph']   = True      # False (default) = Check that all ops are available on the designated device. True = Skip the check for ops that are not used.
-#tf_config['gpu_options.allow_growth']          = False     # False (default) = Allocate all GPU memory at the beginning. True = Allocate only as much GPU memory as needed.
-#env.CUDA_VISIBLE_DEVICES                       = '0'       # Unspecified (default) = Use all available GPUs. List of ints = CUDA device numbers to use.
-env.TF_CPP_MIN_LOG_LEVEL                        = '1'       # 0 (default) = Print all available debug info from TensorFlow. 1 = Print warnings and errors, but disable debug info.
+tf_config['gpu_options.allow_growth']          = True     # False (default) = Allocate all GPU memory at the beginning. True = Allocate only as much GPU memory as needed.
+env.CUDA_VISIBLE_DEVICES                       = '3'       # Unspecified (default) = Use all available GPUs. List of ints = CUDA device numbers to use.
+env.TF_CPP_MIN_LOG_LEVEL                        = '0'       # 0 (default) = Print all available debug info from TensorFlow. 1 = Print warnings and errors, but disable debug info.
 
 #----------------------------------------------------------------------------
 # Official training configs, targeted mainly for CelebA-HQ.
@@ -50,8 +50,9 @@ sched       = EasyDict()                                       # Options for tra
 grid        = EasyDict(size='1080p', layout='random')          # Options for train.setup_snapshot_image_grid().
 
 # Dataset (choose one).
-desc += '-HCP_T1T2_32cubes';            dataset = EasyDict(tfrecord_dir='HCP_T1T2_32cubes'); train.mirror_augment = False
-
+#desc += '-HCP_T1T2_32cubes';            dataset = EasyDict(tfrecord_dir='HCP_T1T2_32cubes'); train.mirror_augment = True
+desc += '-HCP_T1T2_64cubes';            dataset = EasyDict(tfrecord_dir='HCP_T1T2_64cubes'); train.mirror_augment = True
+#desc += '-HCP_T1T2_128cubes';            dataset = EasyDict(tfrecord_dir='HCP_T1T2_128cubes'); train.mirror_augment = True
 
 # Conditioning & snapshot options.
 #desc += '-cond'; dataset.max_label_size = 'full' # conditioned on full label
@@ -62,7 +63,7 @@ desc += '-HCP_T1T2_32cubes';            dataset = EasyDict(tfrecord_dir='HCP_T1T
 # Config presets (choose one).
 #desc += '-preset-v1-1gpu'; num_gpus = 1; D.mbstd_group_size = 16; sched.minibatch_base = 16; sched.minibatch_dict = {256: 14, 512: 6, 1024: 3}; sched.lod_training_kimg = 800; sched.lod_transition_kimg = 800; train.total_kimg = 19000
 
-desc += '-preset-v2-1gpu'; num_gpus = 1; sched.minibatch_base = 4; sched.minibatch_dict = {4: 32, 8: 16, 16: 8, 32: 4, 64: 2, 128: 1, 256: 1, 512: 1}; sched.G_lrate_dict = {1024: 0.0015}; sched.D_lrate_dict = EasyDict(sched.G_lrate_dict); train.total_kimg = 12000
+desc += '-preset-v2-1gpu'; num_gpus = 1; sched.minibatch_base = 4; sched.minibatch_dict = {4: 2048, 8: 1024, 16: 256, 32: 128, 64: 16, 128: 1, 256: 1, 512: 1}; sched.G_lrate_dict = {1024: 0.0015}; sched.D_lrate_dict = EasyDict(sched.G_lrate_dict); train.total_kimg = 120000
 
 #desc += '-preset-v2-2gpus'; num_gpus = 2; sched.minibatch_base = 8; sched.minibatch_dict = {4: 256, 8: 32, 16: 8, 32: 4, 64: 2, 128: 1, 256: 1}; sched.G_lrate_dict = {512: 0.0015, 1024: 0.002}; sched.D_lrate_dict = EasyDict(sched.G_lrate_dict); train.total_kimg = 12000
 
@@ -70,7 +71,7 @@ desc += '-preset-v2-1gpu'; num_gpus = 1; sched.minibatch_base = 4; sched.minibat
 
 # Numerical precision (choose one).
 desc += '-fp32'; sched.max_minibatch_per_gpu = {256: 1, 512: 1, 1024: 1}
-#desc += '-fp16'; G.dtype = 'float16'; D.dtype = 'float16'; G.pixelnorm_epsilon=1e-4; G_opt.use_loss_scaling = True; D_opt.use_loss_scaling = True; sched.max_minibatch_per_gpu = {512: 16, 1024: 8}
+#desc += '-fp16'; G.dtype = 'float16'; D.dtype = 'float16'; G.pixelnorm_epsilon=1e-4; G_opt.use_loss_scaling = True; D_opt.use_loss_scaling = True; sched.max_minibatch_per_gpu = {128: 1, 256: 1, 512: 1, 1024: 1}
 
 # Disable individual features.
 #desc += '-nogrowing'; sched.lod_initial_resolution = 1024; sched.lod_training_kimg = 0; sched.lod_transition_kimg = 0; train.total_kimg = 10000
