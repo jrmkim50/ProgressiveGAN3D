@@ -88,14 +88,14 @@ class TrainingSchedule:
         cur_nimg,
         training_set,
         lod_initial_resolution  = 4,        # Image resolution used at the beginning.
-        lod_training_kimg       = 6000,  # 600     # Thousands of real images to show before doubling the resolution.
-        lod_transition_kimg     = 6000,  # 600    # Thousands of real images to show when fading in new layers.
+        lod_training_kimg       = 6000,  # 600 6000     # Thousands of real images to show before doubling the resolution.
+        lod_transition_kimg     = 6000,  # 600 6000    # Thousands of real images to show when fading in new layers.
         minibatch_base          = 4,       # Maximum minibatch size, divided evenly among GPUs.
         minibatch_dict          = {},       # Resolution-specific overrides.
         max_minibatch_per_gpu   = {},       # Resolution-specific maximum minibatch size per GPU.
-        G_lrate_base            = 0.0003,    # Learning rate for the generator.
+        G_lrate_base            = 0.0003, # 0.0003    # Learning rate for the generator.
         G_lrate_dict            = {},       # Resolution-specific overrides.
-        D_lrate_base            = 0.0003,    # Learning rate for the discriminator.
+        D_lrate_base            = 0.0003, # 0.0003,    # Learning rate for the discriminator.
         D_lrate_dict            = {},       # Resolution-specific overrides.
         tick_kimg_base          = 160,      # Default interval of progress snapshots.
         tick_kimg_dict          = {4: 160, 8:140, 16:120, 32:100, 64:80, 128:60, 256:40, 512:20, 1024:10}): # Resolution-specific overrides.
@@ -153,9 +153,9 @@ def train_progressive_gan(
     # Construct networks.
     with tf.device('/gpu:0'):
         if resume_run_id is not None:
-            network_pkl = misc.locate_network_pkl(resume_run_id, resume_snapshot)
+            network_pkl = misc_3D.locate_network_pkl(resume_run_id, resume_snapshot)
             print('Loading networks from "%s"...' % network_pkl)
-            G, D, Gs = misc.load_pkl(network_pkl)
+            G, D, Gs = misc_3D.load_pkl(network_pkl)
         else:
             print('Constructing networks...')
             G = tfutil_3D.Network('G', num_channels=training_set.shape[0], resolution=training_set.shape[1], label_size=training_set.label_size, **config_3D.G)

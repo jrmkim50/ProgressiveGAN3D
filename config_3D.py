@@ -29,7 +29,7 @@ env = EasyDict()        # Environment variables, set by the main program in trai
 
 tf_config['graph_options.place_pruned_graph']   = True      # False (default) = Check that all ops are available on the designated device. True = Skip the check for ops that are not used.
 tf_config['gpu_options.allow_growth']          = True     # False (default) = Allocate all GPU memory at the beginning. True = Allocate only as much GPU memory as needed.
-env.CUDA_VISIBLE_DEVICES                       = '3'       # Unspecified (default) = Use all available GPUs. List of ints = CUDA device numbers to use.
+env.CUDA_VISIBLE_DEVICES                       = '0,1,2,3'       # Unspecified (default) = Use all available GPUs. List of ints = CUDA device numbers to use.
 env.TF_CPP_MIN_LOG_LEVEL                        = '0'       # 0 (default) = Print all available debug info from TensorFlow. 1 = Print warnings and errors, but disable debug info.
 
 #----------------------------------------------------------------------------
@@ -39,7 +39,13 @@ env.TF_CPP_MIN_LOG_LEVEL                        = '0'       # 0 (default) = Prin
 desc        = 'pgan'                                           # Description string included in result subdir name.
 random_seed = 1000                                             # Global random seed.
 dataset     = EasyDict()                                       # Options for dataset.load_dataset().
-train       = EasyDict(func='train_3D.train_progressive_gan')  # Options for main training func.
+
+
+#train       = EasyDict(func='train_3D.train_progressive_gan')  # Options for main training func.
+
+train       = EasyDict(func='train_3D.train_progressive_gan', resume_run_id=7, resume_snapshot=17940, resume_kimg=17940.5)  # Options for main training func.
+
+
 G           = EasyDict(func='networks_3D.G_paper')             # Options for generator network.
 D           = EasyDict(func='networks_3D.D_paper')             # Options for discriminator network.
 G_opt       = EasyDict(beta1=0.0, beta2=0.99, epsilon=1e-8)    # Options for generator optimizer.
@@ -51,7 +57,7 @@ grid        = EasyDict(size='1080p', layout='random')          # Options for tra
 
 # Dataset (choose one).
 #desc += '-HCP_T1T2_32cubes';            dataset = EasyDict(tfrecord_dir='HCP_T1T2_32cubes'); train.mirror_augment = True
-desc += '-HCP_T1T2_64cubes';            dataset = EasyDict(tfrecord_dir='HCP_T1T2_64cubes'); train.mirror_augment = True
+desc += '-HCP_T1T2_64cubes_copy';            dataset = EasyDict(tfrecord_dir='HCP_T1T2_64cubes_copy'); train.mirror_augment = True
 #desc += '-HCP_T1T2_128cubes';            dataset = EasyDict(tfrecord_dir='HCP_T1T2_128cubes'); train.mirror_augment = True
 
 # Conditioning & snapshot options.
@@ -61,13 +67,14 @@ desc += '-HCP_T1T2_64cubes';            dataset = EasyDict(tfrecord_dir='HCP_T1T
 #desc += '-grpc'; grid.layout = 'row_per_class'
 
 # Config presets (choose one).
-#desc += '-preset-v1-1gpu'; num_gpus = 1; D.mbstd_group_size = 16; sched.minibatch_base = 16; sched.minibatch_dict = {256: 14, 512: 6, 1024: 3}; sched.lod_training_kimg = 800; sched.lod_transition_kimg = 800; train.total_kimg = 19000
 
-desc += '-preset-v2-1gpu'; num_gpus = 1; sched.minibatch_base = 4; sched.minibatch_dict = {4: 2048, 8: 1024, 16: 256, 32: 128, 64: 16, 128: 1, 256: 1, 512: 1}; sched.G_lrate_dict = {1024: 0.0015}; sched.D_lrate_dict = EasyDict(sched.G_lrate_dict); train.total_kimg = 120000
+desc += '-preset-v2-1gpu'; num_gpus = 1; sched.minibatch_base = 4; sched.minibatch_dict = {4: 2048, 8: 1024, 16: 128, 32: 32, 64: 8, 128: 1, 256: 1, 512: 1}; sched.G_lrate_dict = {1024: 0.0015}; sched.D_lrate_dict = EasyDict(sched.G_lrate_dict); train.total_kimg = 120000
 
-#desc += '-preset-v2-2gpus'; num_gpus = 2; sched.minibatch_base = 8; sched.minibatch_dict = {4: 256, 8: 32, 16: 8, 32: 4, 64: 2, 128: 1, 256: 1}; sched.G_lrate_dict = {512: 0.0015, 1024: 0.002}; sched.D_lrate_dict = EasyDict(sched.G_lrate_dict); train.total_kimg = 12000
+#desc += '-preset-v2-2gpus'; num_gpus = 2; sched.minibatch_base = 8; sched.minibatch_dict = {4: 8192, 8: 4096, 16: 256, 32: 128, 64: 16, 128: 2, 256: 2}; sched.G_lrate_dict = {512: 0.0015, 1024: 0.002}; sched.D_lrate_dict = EasyDict(sched.G_lrate_dict); train.total_kimg = 120000
 
-#desc += '-preset-v2-4gpus'; num_gpus = 4; sched.minibatch_base = 16; sched.minibatch_dict = {4: 128, 8: 64, 16: 32, 32: 16, 64: 8, 128: 4}; sched.G_lrate_dict = {256: 0.0015, 512: 0.002, 1024: 0.003}; sched.D_lrate_dict = EasyDict(sched.G_lrate_dict); train.total_kimg = 12000
+#desc += '-preset-v2-4gpus'; num_gpus = 4; sched.minibatch_base = 16; sched.minibatch_dict = {4: 512, 8: 256, 16: 128, 32: 64, 64: 32, 128: 4}; sched.G_lrate_dict = {256: 0.0015, 512: 0.002, 1024: 0.003}; sched.D_lrate_dict = EasyDict(sched.G_lrate_dict); train.total_kimg = 12000
+
+#desc += '-preset-v2-4gpus'; num_gpus = 4; sched.minibatch_base = 16; sched.minibatch_dict = {4: 8192, 8: 4096, 16: 512, 32: 128, 64: 32, 128: 4}; sched.G_lrate_dict = {256: 0.0015, 512: 0.002, 1024: 0.003}; sched.D_lrate_dict = EasyDict(sched.G_lrate_dict); train.total_kimg = 120000
 
 # Numerical precision (choose one).
 desc += '-fp32'; sched.max_minibatch_per_gpu = {256: 1, 512: 1, 1024: 1}

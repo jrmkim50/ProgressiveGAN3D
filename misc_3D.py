@@ -174,7 +174,7 @@ def create_result_subdir(result_dir, desc):
     # Export config.
     try:
         with open(os.path.join(result_subdir, 'config.txt'), 'wt') as fout:
-            for k, v in sorted(config.__dict__.items()):
+            for k, v in sorted(config_3D.__dict__.items()):
                 if not k.startswith('_'):
                     fout.write("%s = %s\n" % (k, str(v)))
     except:
@@ -202,12 +202,12 @@ def locate_result_subdir(run_id_or_result_subdir):
     searchdirs += ['networks']
 
     for searchdir in searchdirs:
-        dir = config.result_dir if searchdir == '' else os.path.join(config.result_dir, searchdir)
+        dir = config_3D.result_dir if searchdir == '' else os.path.join(config_3D.result_dir, searchdir)
         dir = os.path.join(dir, str(run_id_or_result_subdir))
         if os.path.isdir(dir):
             return dir
         prefix = '%03d' % run_id_or_result_subdir if isinstance(run_id_or_result_subdir, int) else str(run_id_or_result_subdir)
-        dirs = sorted(glob.glob(os.path.join(config.result_dir, searchdir, prefix + '-*')))
+        dirs = sorted(glob.glob(os.path.join(config_3D.result_dir, searchdir, prefix + '-*')))
         dirs = [dir for dir in dirs if os.path.isdir(dir)]
         if len(dirs) == 1:
             return dirs[0]
@@ -297,7 +297,7 @@ def load_dataset_for_previous_run(run_id, **kwargs): # => dataset_obj, mirror_au
 
     # Load dataset.
     dataset_cfg.update(kwargs)
-    dataset_obj = dataset.load_dataset(data_dir=config.data_dir, **dataset_cfg)
+    dataset_obj = dataset.load_dataset(data_dir=config_3D.data_dir, **dataset_cfg)
     return dataset_obj, mirror_augment
 
 def apply_mirror_augment(minibatch):
