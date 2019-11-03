@@ -73,11 +73,15 @@ def upscale3d(x, factor=2):
     assert isinstance(factor, int) and factor >= 1
     if factor == 1: return x
     with tf.variable_scope('Upscale3D'):
-        s = x.shape
-        x = tf.reshape(x, [-1, s[1], s[2], 1, s[3], 1, s[4], 1])
-        x = tf.tile(x, [1, 1, 1, factor, 1, factor, 1, factor])
-        x = tf.reshape(x, [-1, s[1], s[2] * factor, s[3] * factor, s[4] * factor])
+        x = tf.compat.v2.keras.layers.UpSampling3D(size=(factor,factor,factor),data_format='channels_first')(x)
         return x
+        #s = x.shape
+        #x = tf.reshape(x, [-1, s[1], s[2], 1, s[3], 1, s[4], 1])
+        #x = tf.tile(x, [1, 1, 1, factor, 1, factor, 1, factor])
+        #x = tf.reshape(x, [-1, s[1], s[2] * factor, s[3] * factor, s[4] * factor])
+        #return x
+
+    
 
 #----------------------------------------------------------------------------
 # Fused upscale3d + conv3d.
@@ -151,7 +155,7 @@ def G_paper(
     label_size          = 0,            # Dimensionality of the labels, 0 if no labels. Overridden based on dataset.
     fmap_base           = 8192,         # Overall multiplier for the number of feature maps.
     fmap_decay          = 1.0,          # log2 feature map reduction when doubling the resolution.
-    fmap_max            = 256,          # Maximum number of feature maps in any layer.
+    fmap_max            = 128,          # Maximum number of feature maps in any layer.
     latent_size         = None,         # Dimensionality of the latent vectors. None = min(fmap_base, fmap_max).
     normalize_latents   = True,         # Normalize latent vectors before feeding them to the network?
     use_wscale          = True,         # Enable equalized learning rate?
@@ -240,9 +244,9 @@ def D_paper(
     label_size          = 0,            # Dimensionality of the labels, 0 if no labels. Overridden based on dataset.
     fmap_base           = 8192,         # Overall multiplier for the number of feature maps.
     fmap_decay          = 1.0,          # log2 feature map reduction when doubling the resolution.
-    fmap_max            = 256,          # Maximum number of feature maps in any layer.
+    fmap_max            = 128,          # Maximum number of feature maps in any layer.
     use_wscale          = True,         # Enable equalized learning rate?
-    mbstd_group_size    = 4,            # Group size for the minibatch standard deviation layer, 0 = disable.
+    mbstd_group_size    = 0,            # Group size for the minibatch standard deviation layer, 0 = disable.
     dtype               = 'float32',    # Data type to use for activations and outputs.
     fused_scale         = True,         # True = use fused conv2d + downscale2d, False = separate downscale2d layers.
     structure           = None,         # 'linear' = human-readable, 'recursive' = efficient, None = select automatically

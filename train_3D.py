@@ -62,7 +62,9 @@ def process_reals(x, lod, mirror_augment, drange_data, drange_net):
             with tf.name_scope('MirrorAugment'):
                 s = tf.shape(x)
                 mask = tf.random_uniform([s[0], 1, 1, 1, 1], 0.0, 1.0)
+                print("Train: Before tile 1")
                 mask = tf.tile(mask, [1, s[1], s[2], s[3], s[4]])
+                print("Train: After tile 1")
                 x = tf.where(mask < 0.5, x, tf.reverse(x, axis=[4]))
         with tf.name_scope('FadeLOD'): # Smooth crossfade between consecutive levels-of-detail.
             s = tf.shape(x)
@@ -74,6 +76,8 @@ def process_reals(x, lod, mirror_augment, drange_data, drange_net):
         with tf.name_scope('UpscaleLOD'): # Upscale to match the expected input/output size of the networks.
             s = tf.shape(x)
             factor = tf.cast(2 ** tf.floor(lod), tf.int32)
+            #factor = (2 ** np.floor(lod.data)).astype(int32)
+            #x = tf.compat.v2.keras.layers.UpSampling3D(size=(factor,factor,factor),data_format='channels_first')(x)
             x = tf.reshape(x, [-1, s[1], s[2], 1, s[3], 1, s[4], 1])
             x = tf.tile(x, [1, 1, 1, factor, 1, factor, 1, factor])
             x = tf.reshape(x, [-1, s[1], s[2] * factor, s[3] * factor, s[4] * factor])
@@ -88,14 +92,14 @@ class TrainingSchedule:
         cur_nimg,
         training_set,
         lod_initial_resolution  = 4,        # Image resolution used at the beginning.
-        lod_training_kimg       = 6000,  # 600 6000     # Thousands of real images to show before doubling the resolution.
-        lod_transition_kimg     = 6000,  # 600 6000    # Thousands of real images to show when fading in new layers.
+        lod_training_kimg       = 1000,  # 600 6000     # Thousands of real images to show before doubling the resolution.
+        lod_transition_kimg     = 1000,  # 600 6000    # Thousands of real images to show when fading in new layers.
         minibatch_base          = 4,       # Maximum minibatch size, divided evenly among GPUs.
         minibatch_dict          = {},       # Resolution-specific overrides.
         max_minibatch_per_gpu   = {},       # Resolution-specific maximum minibatch size per GPU.
-        G_lrate_base            = 0.0003, # 0.0003    # Learning rate for the generator.
+        G_lrate_base            = 0.001, # 0.0003    # Learning rate for the generator.
         G_lrate_dict            = {},       # Resolution-specific overrides.
-        D_lrate_base            = 0.0003, # 0.0003,    # Learning rate for the discriminator.
+        D_lrate_base            = 0.001, # 0.0003,    # Learning rate for the discriminator.
         D_lrate_dict            = {},       # Resolution-specific overrides.
         tick_kimg_base          = 160,      # Default interval of progress snapshots.
         tick_kimg_dict          = {4: 160, 8:140, 16:120, 32:100, 64:80, 128:60, 256:40, 512:20, 1024:10}): # Resolution-specific overrides.
@@ -244,11 +248,12 @@ def train_progressive_gan(
             maintenance_start_time = cur_time
 
             # Report progress.
-            print('tick %-5d kimg %-8.1f lod %-5.2f minibatch %-4d time %-12s sec/tick %-7.1f sec/kimg %-7.2f maintenance %.1f' % (
+            print('tick %-5d kimg %-8.1f lod %-5.2f minibatch %-4d  lrate %-5.4f  time %-12s sec/tick %-7.1f sec/kimg %-7.2f maintenance %.1f' % (
                 tfutil_3D.autosummary('Progress/tick', cur_tick),
                 tfutil_3D.autosummary('Progress/kimg', cur_nimg / 1000.0),
                 tfutil_3D.autosummary('Progress/lod', sched.lod),
                 tfutil_3D.autosummary('Progress/minibatch', sched.minibatch),
+                tfutil_3D.autosummary('Progress/Glrate', sched.G_lrate),
                 misc_3D.format_time(tfutil_3D.autosummary('Timing/total_sec', total_time)),
                 tfutil_3D.autosummary('Timing/sec_per_tick', tick_time),
                 tfutil_3D.autosummary('Timing/sec_per_kimg', tick_time / tick_kimg),
@@ -261,7 +266,7 @@ def train_progressive_gan(
             if cur_tick % image_snapshot_ticks == 0 or done:
                 grid_fakes = Gs.run(grid_latents, grid_labels, minibatch_size=sched.minibatch//config_3D.num_gpus)
                 misc_3D.save_image_grid(grid_fakes, os.path.join(result_subdir, 'fakes%06d.png' % (cur_nimg // 1000)), os.path.join(result_subdir, 'fakes%06d.nii.gz' % (cur_nimg // 1000)), drange=drange_net, grid_size=grid_size)
-            if cur_tick % network_snapshot_ticks == 0 or done:
+            if cur_tick % image_snapshot_ticks == 0 or done:
                 misc_3D.save_pkl((G, D, Gs), os.path.join(result_subdir, 'network-snapshot-%06d.pkl' % (cur_nimg // 1000)))
 
             # Record start time of the next tick.
