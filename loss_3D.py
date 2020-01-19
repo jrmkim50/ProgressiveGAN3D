@@ -35,6 +35,8 @@ def G_wgan_acgan(G, D, opt, training_set, minibatch_size,
         with tf.name_scope('LabelPenalty'):
             label_penalty_fakes = tf.nn.softmax_cross_entropy_with_logits_v2(labels=labels, logits=fake_labels_out)
         loss += label_penalty_fakes * cond_weight
+
+    loss = tfutil_3D.autosummary('Loss/G_loss', loss)
     return loss
 
 #----------------------------------------------------------------------------
@@ -53,10 +55,22 @@ def D_wgangp_acgan(G, D, opt, training_set, minibatch_size, reals, labels,
     real_scores_out = tfutil_3D.autosummary('Loss/real_scores', real_scores_out)
     fake_scores_out = tfutil_3D.autosummary('Loss/fake_scores', fake_scores_out)
     loss = fake_scores_out - real_scores_out
+    raw_loss = loss
+    raw_loss = tfutil_3D.autosummary('Loss/D_raw_loss', raw_loss)
+    
+    real_accuracy = tf.math.reduce_sum(real_labels_out)
+    real_accuracy = tfutil_3D.autosummary('Loss/D_real_accuracy', real_accuracy)
 
+    fake_accuracy = tf.math.divide(tf.math.subtract(fp32(minibatch_size), tf.math.reduce_sum(fake_labels_out)), fp32(minibatch_size))
+    fake_accuracy = tfutil_3D.autosummary('Loss/D_fake_accuracy', fake_accuracy)
+
+    half = tf.constant(0.5)
+    accuracy = tf.math.add(tf.math.multiply(real_accuracy,half) , tf.math.multiply(fake_accuracy,half) )
+    accuracy = tfutil_3D.autosummary('Loss/D_accuracy', accuracy)
+
+    
     with tf.name_scope('GradientPenalty'):
         mixing_factors = tf.random_uniform([minibatch_size, 1, 1, 1, 1], 0.0, 1.0, dtype=fake_images_out.dtype)
-        #arne = fake_images_out - tf.cast(reals, fake_images_out.dtype) 
         mixed_images_out = tfutil_3D.lerp(tf.cast(reals, fake_images_out.dtype), fake_images_out, mixing_factors)
         mixed_scores_out, mixed_labels_out = fp32(D.get_output_for(mixed_images_out, is_training=True))
         mixed_scores_out = tfutil_3D.autosummary('Loss/mixed_scores', mixed_scores_out)
@@ -78,6 +92,25 @@ def D_wgangp_acgan(G, D, opt, training_set, minibatch_size, reals, labels,
             label_penalty_reals = tfutil_3D.autosummary('Loss/label_penalty_reals', label_penalty_reals)
             label_penalty_fakes = tfutil_3D.autosummary('Loss/label_penalty_fakes', label_penalty_fakes)
         loss += (label_penalty_reals + label_penalty_fakes) * cond_weight
+
+    loss = tfutil_3D.autosummary('Loss/D_loss', loss)
     return loss
+
+
+#----------------------------------------------------------------------------
+# Discriminator accuracy function 
+
+def D_wgangp_acgan_accuracy(G, D, opt, training_set, minibatch_size, reals, labels):
+
+    latents = tf.random_normal([minibatch_size] + G.input_shapes[0][1:])
+    fake_images_out = G.get_output_for(latents, labels, is_training=False)
+    real_scores_out, real_labels_out = fp32(D.get_output_for(reals, is_training=False))
+    fake_scores_out, fake_labels_out = fp32(D.get_output_for(fake_images_out, is_training=False))
+
+    accuracy2 = 0.5 * np.sum(real_labels_out) / fp32(minibatch_size) + 0.5 * (fp32(minibatch_size) - np.sum(fake_labels_out)) / fp32(minibatch_size)
+
+    #accuracy = tfutil_3D.autosummary('Loss/D_accuracy', accuracy)
+
+    return accuracy2
 
 #----------------------------------------------------------------------------

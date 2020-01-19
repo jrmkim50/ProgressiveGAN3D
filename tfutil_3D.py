@@ -249,7 +249,8 @@ class Optimizer:
     def __init__(
         self,
         name                = 'Train',
-        tf_optimizer        = 'tf.train.AdamOptimizer',
+        #tf_optimizer        = 'tf.train.AdamOptimizer',
+        tf_optimizer        = 'tf.compat.v1.train.AdamOptimizer',
         learning_rate       = 0.001,
         use_loss_scaling    = False,
         loss_scaling_init   = 64.0,
@@ -298,7 +299,7 @@ class Optimizer:
                 self._dev_opt[dev] = self.optimizer_class(name=opt_name, learning_rate=self.learning_rate, **self.optimizer_kwargs)
                 self._dev_grads[dev] = []
             loss = self.apply_loss_scaling(tf.cast(loss, tf.float32))
-            grads = self._dev_opt[dev].compute_gradients(loss, vars, gate_gradients=tf.train.Optimizer.GATE_NONE) # disable gating to reduce memory usage
+            grads = self._dev_opt[dev].compute_gradients(loss, vars, gate_gradients=tf.compat.v1.train.Optimizer.GATE_NONE) # disable gating to reduce memory usage
             grads = [(g, v) if g is not None else (tf.zeros_like(v), v) for g, v in grads] # replace disconnected gradients with zeros
             self._dev_grads[dev].append(grads)
 

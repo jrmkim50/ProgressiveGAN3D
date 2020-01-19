@@ -9,7 +9,7 @@ import os
 import time
 import numpy as np
 import tensorflow as tf
-
+import sys
 import config_3D
 import tfutil_3D
 import dataset_3D
@@ -62,9 +62,7 @@ def process_reals(x, lod, mirror_augment, drange_data, drange_net):
             with tf.name_scope('MirrorAugment'):
                 s = tf.shape(x)
                 mask = tf.random_uniform([s[0], 1, 1, 1, 1], 0.0, 1.0)
-                print("Train: Before tile 1")
                 mask = tf.tile(mask, [1, s[1], s[2], s[3], s[4]])
-                print("Train: After tile 1")
                 x = tf.where(mask < 0.5, x, tf.reverse(x, axis=[4]))
         with tf.name_scope('FadeLOD'): # Smooth crossfade between consecutive levels-of-detail.
             s = tf.shape(x)
@@ -136,7 +134,8 @@ class TrainingSchedule:
 
 def train_progressive_gan(
     G_smoothing             = 0.999,        # Exponential running average of generator weights.
-    D_repeats               = 1,            # How many times the discriminator is trained per G iteration.
+    D_repeats               = 1,            # How many times the discriminator is trained per update
+    G_repeats               = 1,            # How many times the generator is trained per update
     minibatch_repeats       = 4,            # Number of minibatches to run before adjusting training parameters.
     reset_opt_for_new_lod   = True,         # Reset optimizer internal state (e.g. Adam moments) when new layers are introduced?
     total_kimg              = 15000,        # Total length of the training, measured in thousands of real images.
@@ -190,6 +189,8 @@ def train_progressive_gan(
                 G_loss = tfutil_3D.call_func_by_name(G=G_gpu, D=D_gpu, opt=G_opt, training_set=training_set, minibatch_size=minibatch_split, **config_3D.G_loss)
             with tf.name_scope('D_loss'), tf.control_dependencies(lod_assign_ops):
                 D_loss = tfutil_3D.call_func_by_name(G=G_gpu, D=D_gpu, opt=D_opt, training_set=training_set, minibatch_size=minibatch_split, reals=reals_gpu, labels=labels_gpu, **config_3D.D_loss)
+            with tf.name_scope('D_accuracy'), tf.control_dependencies(lod_assign_ops):
+                D_accuracy = tfutil_3D.call_func_by_name(G=G_gpu, D=D_gpu, opt=D_opt, training_set=training_set, minibatch_size=minibatch_split, reals=reals_gpu, labels=labels_gpu, **config_3D.D_accuracy)    
             G_opt.register_gradients(tf.reduce_mean(G_loss), G_gpu.trainables)
             D_opt.register_gradients(tf.reduce_mean(D_loss), D_gpu.trainables)
     G_train_op = G_opt.apply_updates()
@@ -233,14 +234,33 @@ def train_progressive_gan(
             for _ in range(D_repeats):
                 tfutil_3D.run([D_train_op, Gs_update_op], {lod_in: sched.lod, lrate_in: sched.D_lrate, minibatch_in: sched.minibatch})
                 cur_nimg += sched.minibatch
-            tfutil_3D.run([G_train_op], {lod_in: sched.lod, lrate_in: sched.G_lrate, minibatch_in: sched.minibatch})
+            for _ in range(G_repeats):    
+                tfutil_3D.run([G_train_op], {lod_in: sched.lod, lrate_in: sched.G_lrate, minibatch_in: sched.minibatch})
 
+        # Train the discriminator once to get started
+        #tfutil_3D.run([D_train_op, Gs_update_op], {lod_in: sched.lod, lrate_in: sched.D_lrate, minibatch_in: sched.minibatch})
+        #tfutil_3D.run([G_train_op], {lod_in: sched.lod, lrate_in: sched.G_lrate, minibatch_in: sched.minibatch})
+        
+        #for repeat in range(minibatch_repeats):
+            #if tf.keras.backend.get_value(tf.reduce_mean( tfutil_3D.call_func_by_name(G=G_gpu, D=D_gpu, opt=D_opt, training_set=training_set, minibatch_size=minibatch_split, reals=reals_gpu, labels=labels_gpu, **config_3D.D_loss)   )) > tf.keras.backend.get_value(tf.reduce_mean(  tfutil_3D.call_func_by_name(G=G_gpu, D=D_gpu, opt=G_opt, training_set=training_set, minibatch_size=minibatch_split, **config_3D.G_loss)  )):
+                #print("Training discriminator")
+                #tfutil_3D.run([D_train_op, Gs_update_op], {lod_in: sched.lod, lrate_in: sched.D_lrate, minibatch_in: sched.minibatch})  
+            #tfutil_3D.run([D_train_op, Gs_update_op], {lod_in: sched.lod, lrate_in: sched.D_lrate, minibatch_in: sched.minibatch})
+            #tf.cond(tf.reduce_mean(D_loss) > tf.reduce_mean(G_loss), lambda: tfutil_3D.run([D_train_op, Gs_update_op], {lod_in: sched.lod, lrate_in: sched.D_lrate, minibatch_in: sched.minibatch}), lambda: tf.no_op())
+            #tfutil_3D.run([D_train_op, Gs_update_op], {lod_in: sched.lod, lrate_in: sched.D_lrate, minibatch_in: sched.minibatch} ))
+            #tfutil_3D.run([D_train_op, Gs_update_op], {lod_in: sched.lod, lrate_in: sched.D_lrate, minibatch_in: sched.minibatch})
+            #print("Training generator")
+            #tfutil_3D.run([G_train_op], {lod_in: sched.lod, lrate_in: sched.G_lrate, minibatch_in: sched.minibatch})
+            #cur_nimg += sched.minibatch
+            #tf.print(tf.reduce_mean(D_accuracy), "Mean accuracy " )
+            #print(' cur_nimg %-5d accuracy %-5d ' %
+            
         # Perform maintenance tasks once per tick.
         done = (cur_nimg >= total_kimg * 1000)
-        if cur_nimg >= tick_start_nimg + sched.tick_kimg * 1000 or done:
+        if cur_nimg >= tick_start_nimg + sched.tick_kimg * 300 or done:
             cur_tick += 1
             cur_time = time.time()
-            tick_kimg = (cur_nimg - tick_start_nimg) / 1000.0
+            tick_kimg = (cur_nimg - tick_start_nimg) / 300.0
             tick_start_nimg = cur_nimg
             tick_time = cur_time - tick_start_time
             total_time = cur_time - train_start_time
