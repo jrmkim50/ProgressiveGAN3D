@@ -1,9 +1,9 @@
-## Feeding the zombies: Synthesizing brain volumes using a 3D progressive growing GAN<br><i>– Official TensorFlow implementation</i>
+## Feeding the zombies: Synthesizing brain volumes using a 3D progressive growing GAN<br>
 
 Anders Eklund, Linköping University
 
 ![Representative image](https://raw.githubusercontent.com/wanderine/ProgressiveGAN3D/master/brain.png)<br>
-**Picture:** A brain that was dreamed up by a random number generator.
+A brain that was dreamed up by a random number generator.
 
 **Abstract:**<br>
 *Deep learning requires large datasets for training (convolutional) networks with millions of parameters. In neuroimaging, there are few open datasets with more than 100 subjects, which makes it difficult to, for example, train a classifier to discriminate controls from diseased persons. Generative adversarial networks (GANs) can be used to synthesize data, but virtually all research is focused on 2D images. In medical imaging, and especially in neuroimaging, most datasets are 3D or 4D. Here we therefore present preliminary results showing that a 3D progressive growing GAN can be used to synthesize MR brain volumes.*
