@@ -14,6 +14,11 @@ Anders Eklund, Linköping University
 
 All the material, including source code, is made freely available for non-commercial use under the Creative Commons [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/legalcode) license. Feel free to use any of the material in your own work, as long as you give us appropriate credit by mentioning the title and author list of our paper.
 
+This 3D version is based on the original 2D version presented here
+
+* [Paper (arXiv)](https://arxiv.org/abs/1710.10196)
+
+* [Github](https://github.com/tkarras/progressive_growing_of_gans)
 
 ## System requirements
 
