@@ -96,6 +96,7 @@ class TFRecordExporter:
             assert self.shape[1] == 2**self.resolution_log2
             tfr_opt = tf.python_io.TFRecordOptions(tf.python_io.TFRecordCompressionType.NONE)
             for lod in range(self.resolution_log2 - 1):
+                # lod 0 / resolution 7: full resolution. lod 5 / resolution 2: lowest resolution
                 tfr_file = self.tfr_prefix + '-r%02d.tfrecords' % (self.resolution_log2 - lod)
                 self.tfr_writers.append(tf.python_io.TFRecordWriter(tfr_file, tfr_opt))
         assert vol.shape == self.shape
@@ -103,10 +104,10 @@ class TFRecordExporter:
             if lod:
                 vol = vol.astype(np.float32)
                 vol = (vol[:, 0::2, 0::2, 0::2] + vol[:, 0::2, 1::2, 0::2] + vol[:, 1::2, 0::2, 0::2] + vol[:, 1::2, 1::2, 0::2]  +  vol[:, 0::2, 0::2, 1::2] + vol[:, 0::2, 1::2, 1::2] + vol[:, 1::2, 0::2, 1::2] + vol[:, 1::2, 1::2, 1::2]   ) * 0.125 
-            quant = np.rint(vol).clip(0, 65535).astype(np.uint16)
+            quant = vol.clip(0, 1.0).astype(np.float32)
             ex = tf.train.Example(features=tf.train.Features(feature={
                 'shape': tf.train.Feature(int64_list=tf.train.Int64List(value=quant.shape)),
-                'data': tf.train.Feature(bytes_list=tf.train.BytesList(value=[quant.tostring()]))}))
+                'data': tf.train.Feature(bytes_list=tf.train.BytesList(value=[quant.tobytes()]))}))
             tfr_writer.write(ex.SerializeToString())
         self.cur_images += 1
         
