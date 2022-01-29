@@ -126,6 +126,37 @@ class TFRecordExporter:
 
 #----------------------------------------------------------------------------
 
+import nibabel as nib
+            
+def create_from_nifti(tfrecord_dir, nifti_dir, shuffle):
+    print('Loading nifti files from "%s"' % nifti_dir)
+    nifti_filenames = sorted(glob.glob(os.path.join(nifti_dir, '*')))
+
+    if len(nifti_filenames) == 0:
+        error('No nifti files found')
+
+    vol = nib.load(nifti_filenames[0])
+    resolution = vol.shape[0]
+    print("Shape is ",vol.shape)
+    print("Resolution is ",resolution)
+    channels = vol.shape[3] if vol.ndim == 4 else 1
+    if vol.shape[1] != resolution:
+        error('Input volume must have same width and height')
+    if vol.shape[2] != resolution:
+        error('Input volume must have same width and depth')
+    if resolution != 2 ** int(np.floor(np.log2(resolution))):
+        error('Input volume resolution must be a power-of-two')
+    if channels != 1:
+        error('Number of channels must be 1')
+
+    with TFRecordExporter(tfrecord_dir, len(nifti_filenames)) as tfr:
+        order = tfr.choose_shuffled_order() if shuffle else np.arange(len(nifti_filenames))
+        for idx in range(order.size):
+            vol = nib.load(nifti_filenames[order[idx]]).get_fdata()
+            vol = vol[np.newaxis, :, :, :] # DHW => CDHW
+            tfr.add_volume(vol)
+
+#----------------------------------------------------------------------------
 class ExceptionInfo(object):
     def __init__(self):
         self.value = sys.exc_info()[1]
@@ -309,36 +340,6 @@ def compare(tfrecord_dir_a, tfrecord_dir_b, ignore_labels):
 
 #----------------------------------------------------------------------------
 
-import nibabel as nib
-            
-def create_from_nifti(tfrecord_dir, nifti_dir, shuffle):
-    print('Loading nifti files from "%s"' % nifti_dir)
-    nifti_filenames = sorted(glob.glob(os.path.join(nifti_dir, '*')))
-
-    if len(nifti_filenames) == 0:
-        error('No nifti files found')
-
-    vol = nib.load(nifti_filenames[0])
-    resolution = vol.shape[0]
-    print("Shape is ",vol.shape)
-    print("Resolution is ",resolution)
-    channels = vol.shape[3] if vol.ndim == 4 else 1
-    if vol.shape[1] != resolution:
-        error('Input volume must have same width and height')
-    if vol.shape[2] != resolution:
-        error('Input volume must have same width and depth')
-    if resolution != 2 ** int(np.floor(np.log2(resolution))):
-        error('Input volume resolution must be a power-of-two')
-    if channels != 1:
-        error('Number of channels must be 1')
-
-    with TFRecordExporter(tfrecord_dir, len(nifti_filenames)) as tfr:
-        order = tfr.choose_shuffled_order() if shuffle else np.arange(len(nifti_filenames))
-        for idx in range(order.size):
-            vol = nib.load(nifti_filenames[order[idx]]).get_fdata()
-            vol = vol[np.newaxis, :, :, :] # DHW => CDHW
-            tfr.add_volume(vol)
-
 def execute_cmdline(argv):
     prog = argv[0]
     parser = argparse.ArgumentParser(
@@ -372,7 +373,7 @@ def execute_cmdline(argv):
     p.add_argument(     'tfrecord_dir',     help='New dataset directory to be created')
     p.add_argument(     'nifti_dir',        help='Directory containing the nifti files')
     p.add_argument(     '--shuffle',        help='Randomize nifti order (default: 1)', type=int, default=1)
-        
+
     args = parser.parse_args(argv[1:] if len(argv) > 1 else ['-h'])
     func = globals()[args.command]
     del args.command
