@@ -49,21 +49,24 @@ def save_nifti(images, nifti_filename):
     nifti = nib.Nifti1Image(temp.transpose(1,2,3,0).astype("float32"), np.eye(4))
     nib.save(nifti, nifti_filename)
 
-def create_image_grid(images, grid_size=None):
+def create_image_grid_3D(images, grid_size=None):
     assert images.ndim == 4 or images.ndim == 5
     num, img_w, img_h, img_d = images.shape[0], images.shape[-1], images.shape[-2], images.shape[-3]
 
     if grid_size is not None:
-        grid_w, grid_h = tuple(grid_size)
+        grid_h, grid_d = tuple(grid_size)
     else:
-        grid_w = max(int(np.ceil(np.sqrt(num))), 1)
-        grid_h = max((num - 1) // grid_w + 1, 1)
+        grid_h = max(int(np.ceil(np.sqrt(num))), 1)
+        grid_d = max((num - 1) // grid_h + 1, 1)
             
-    grid = np.zeros(list(images.shape[1:-2]) + [grid_h * img_h, grid_w * img_w], dtype=images.dtype)
+    grid = np.zeros(list(images.shape[1:-2]) + [grid_d * img_d, grid_h * img_h], dtype=images.dtype)
     for idx in range(num):
-        x = (idx % grid_w) * img_w
-        y = (idx // grid_w) * img_h
-        grid[..., y : y + img_h, x : x + img_w] = images[idx,:,:,np.round(img_d//2)]
+        x = (idx % grid_h) * img_h
+        y = (idx // grid_h) * img_d
+        if images.ndim == 4:
+            grid[..., y : y + img_d, x : x + img_h] = images[idx][ :, :, int(img_w//2) ]
+        else:
+            grid[..., y : y + img_d, x : x + img_h] = images[idx][ 0, :, :, int(img_w//2) ]
     return grid
 
 def convert_to_pil_image(image, drange=[0,1]):
@@ -86,9 +89,31 @@ def save_image(image, filename, drange=[0,1], quality=95):
     else:
         img.save(filename)
 
+def convert_3d_to_pil_image(image, drange=[0,1]):
+    assert image.ndim == 4 or image.ndim == 5
+    if image.ndim == 4:
+        if image.shape[0] == 1:
+            image = image[0] # grayscale CHWD => DHW
+            img_d = image.shape[ 0 ]
+            image = image[ int( img_d // 2 ), :, : ] 
+        else:
+            image = image.transpose(1, 2, 3, 0) # CDHW -> DHWC
+            img_d = image.shape[ 0 ]
+            image = image[ int( img_d // 2 ), :, :, : ]
+    # else:
+    #     image = image[ :, img_d//2, :, :, : ]
+
+    image = adjust_dynamic_range(image, drange, [0,255])
+    image = np.rint(image).clip(0, 255).astype(np.uint8)
+    # fmt = 'RGB' if image.ndim == 3 else 'L'
+    fmt = 'L'
+
+    return PIL.Image.fromarray( image, fmt)
+
 def save_image_grid(images, filename, nifti_filename, drange=[0,1], grid_size=None):
-    #save_nifti(images, nifti_filename)
-    convert_to_pil_image(create_image_grid(images, grid_size), drange).save(filename)
+    pil_image = create_image_grid_3D(images, grid_size)
+    print(pil_image.shape)
+    convert_3d_to_pil_image(pil_image, drange).save(filename)
 
 #----------------------------------------------------------------------------
 # Logging of stdout and stderr to a file.
