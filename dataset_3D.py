@@ -18,7 +18,7 @@ def parse_tfrecord_tf(record):
     features = tf.parse_single_example(record, features={
         'shape': tf.FixedLenFeature([4], tf.int64),
         'data': tf.FixedLenFeature([], tf.string)})
-    data = tf.decode_raw(features['data'], tf.uint16)
+    data = tf.decode_raw(features['data'], tf.float32)
     return tf.reshape(data, features['shape'])
 
 def parse_tfrecord_np(record):
@@ -26,7 +26,7 @@ def parse_tfrecord_np(record):
     ex.ParseFromString(record)
     shape = ex.features.feature['shape'].int64_list.value
     data = ex.features.feature['data'].bytes_list.value[0]
-    return np.fromstring(data, np.uint16).reshape(shape)
+    return np.fromstring(data, np.float32).reshape(shape)
 
 #----------------------------------------------------------------------------
 # Dataset class that loads data from tfrecords files.
@@ -47,8 +47,8 @@ class TFRecordDataset:
         self.resolution         = None
         self.resolution_log2    = None
         self.shape              = []        # [channel, depth, height, width]
-        self.dtype              = 'uint16'
-        self.dynamic_range      = [0, 65535]
+        self.dtype              = 'float32'
+        self.dynamic_range      = [0, 1.0]
         self.label_file         = label_file
         self.label_size         = None      # [component]
         self.label_dtype        = None
