@@ -87,8 +87,8 @@ def save_image(image, filename, drange=[0,1], quality=95):
         img.save(filename)
 
 def save_image_grid(images, filename, nifti_filename, drange=[0,1], grid_size=None):
-    save_nifti(images, nifti_filename)
-    #convert_to_pil_image(create_image_grid(images, grid_size), drange).save(filename)
+    #save_nifti(images, nifti_filename)
+    convert_to_pil_image(create_image_grid(images, grid_size), drange).save(filename)
 
 #----------------------------------------------------------------------------
 # Logging of stdout and stderr to a file.
