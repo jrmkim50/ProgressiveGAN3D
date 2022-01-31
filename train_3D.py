@@ -222,6 +222,7 @@ def train_progressive_gan(
     while cur_nimg < total_kimg * 1000:
 
         # Choose training parameters and configure training ops.
+        print(sched.tick_kimg, cur_nimg, sched.resolution, sched.minibatch, **config_3D.sched)
         sched = TrainingSchedule(cur_nimg, training_set, **config_3D.sched)
         training_set.configure(sched.minibatch, sched.lod)
         if reset_opt_for_new_lod:
@@ -257,7 +258,6 @@ def train_progressive_gan(
             
         # Perform maintenance tasks once per tick.
         done = (cur_nimg >= total_kimg * 1000)
-        print(sched.tick_kimg, cur_nimg, sched.resolution, sched.minibatch, **config_3D.sched)
         if cur_nimg >= tick_start_nimg + sched.tick_kimg * 1000 or done:
             cur_tick += 1
             cur_time = time.time()
