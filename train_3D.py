@@ -222,7 +222,6 @@ def train_progressive_gan(
     while cur_nimg < total_kimg * 1000:
 
         # Choose training parameters and configure training ops.
-        print(sched.tick_kimg, cur_nimg, sched.resolution, sched.minibatch)
         sched = TrainingSchedule(cur_nimg, training_set, **config_3D.sched)
         training_set.configure(sched.minibatch, sched.lod)
         if reset_opt_for_new_lod:
@@ -232,6 +231,7 @@ def train_progressive_gan(
 
         # Run training ops.
         for repeat in range(minibatch_repeats):
+            print(repeat, sched.tick_kimg, cur_nimg, sched.resolution, sched.minibatch)
             for _ in range(D_repeats):
                 tfutil_3D.run([D_train_op, Gs_update_op], {lod_in: sched.lod, lrate_in: sched.D_lrate, minibatch_in: sched.minibatch})
                 cur_nimg += sched.minibatch
