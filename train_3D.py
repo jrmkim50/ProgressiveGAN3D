@@ -89,7 +89,7 @@ class TrainingSchedule:
         self,
         cur_nimg,
         training_set,
-        lod_initial_resolution  = 4,        # Image resolution used at the beginning.
+        lod_initial_resolution  = 8,        # Image resolution used at the beginning.
         lod_training_kimg       = 1000,  # 600 6000     # Thousands of real images to show before doubling the resolution.
         lod_transition_kimg     = 1000,  # 600 6000    # Thousands of real images to show when fading in new layers.
         minibatch_base          = 4,       # Maximum minibatch size, divided evenly among GPUs.
