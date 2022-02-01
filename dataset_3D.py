@@ -116,7 +116,7 @@ class TFRecordDataset:
             for tfr_file, tfr_shape, tfr_lod in zip(tfr_files, tfr_shapes, tfr_lods):
                 if tfr_lod < 0:
                     continue
-                dset = tf.data.TFRecordDataset(tfr_file, compression_type='', buffer_size=buffer_mb<<20)
+                dset = tf.data.TFRecordDataset(tfr_file, compression_type='') # , buffer_size=buffer_mb<<20
                 dset = dset.map(parse_tfrecord_tf, num_parallel_calls=num_threads)
                 dset = tf.data.Dataset.zip((dset, self._tf_labels_dataset))
                 bytes_per_item = np.prod(tfr_shape) * np.dtype(self.dtype).itemsize
