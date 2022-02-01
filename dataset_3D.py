@@ -117,7 +117,7 @@ class TFRecordDataset:
                 if tfr_lod < 0:
                     continue
                 dset = tf.data.TFRecordDataset(tfr_file, compression_type='', buffer_size=buffer_mb<<20)
-                dset = dset.map(parse_tfrecord_tf, num_parallel_calls=num_threads)
+                dset = dset.map(parse_tfrecord_tf) #trying out no parallelism num_parallel_calls=num_threads
                 dset = tf.data.Dataset.zip((dset, self._tf_labels_dataset))
                 bytes_per_item = np.prod(tfr_shape) * np.dtype(self.dtype).itemsize
                 if shuffle_mb > 0:
