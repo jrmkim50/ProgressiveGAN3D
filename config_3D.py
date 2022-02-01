@@ -29,7 +29,6 @@ env = EasyDict()        # Environment variables, set by the main program in trai
 
 tf_config['graph_options.place_pruned_graph']   = True      # False (default) = Check that all ops are available on the designated device. True = Skip the check for ops that are not used.
 tf_config['gpu_options.allow_growth']          = True     # False (default) = Allocate all GPU memory at the beginning. True = Allocate only as much GPU memory as needed.
-tf_config['use_per_session_threads']            = True
 #env.CUDA_VISIBLE_DEVICES                       = '0,1,2,3'       # Unspecified (default) = Use all available GPUs. List of ints = CUDA device numbers to use.
 env.TF_CPP_MIN_LOG_LEVEL                        = '1'       # 0 (default) = Print all available debug info from TensorFlow. 1 = Print warnings and errors, but disable debug info.
 
@@ -88,7 +87,7 @@ desc += '-MOUSE';            dataset = EasyDict(tfrecord_dir='mice-1-29-half-res
 
 # Config presets (choose one).
 
-desc += '-preset-v2-1gpu'; num_gpus = 1; sched.minibatch_base = 4; sched.minibatch_dict = {4: 2048, 8: 1024, 16: 128, 32: 32, 64: 8}; sched.G_lrate_dict = {1024: 0.0015}; sched.D_lrate_dict = EasyDict(sched.G_lrate_dict); train.total_kimg = 120000
+desc += '-preset-v2-1gpu'; num_gpus = 1; sched.minibatch_base = 4; sched.minibatch_dict = {4: 1024, 8: 512, 16: 128, 32: 32, 64: 8}; sched.G_lrate_dict = {1024: 0.0015}; sched.D_lrate_dict = EasyDict(sched.G_lrate_dict); train.total_kimg = 120000
 sched.tick_kimg_dict = {4: 20, 8:20, 16:20, 32:20, 64:20}; sched.lod_training_kimg = 40; sched.lod_transition_kimg = 40
 #desc += '-preset-v2-2gpus'; num_gpus = 2; sched.minibatch_base = 8; sched.minibatch_dict = {4: 4096, 8: 2048, 16: 256, 32: 64, 64: 16, 128: 2, 256: 2}; sched.G_lrate_dict = {512: 0.0015, 1024: 0.002}; sched.D_lrate_dict = EasyDict(sched.G_lrate_dict); train.total_kimg = 120000
 
