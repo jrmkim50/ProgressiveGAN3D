@@ -40,7 +40,7 @@ class TFRecordDataset:
         repeat          = True,     # Repeat dataset indefinitely.
         shuffle_mb      = 4096,     # Shuffle data within specified window (megabytes), 0 = disable shuffling.
         prefetch_mb     = 2048,     # Amount of data to prefetch (megabytes), 0 = disable prefetching.
-        buffer_mb       = 4096,      # Read buffer size (megabytes).
+        buffer_mb       = 256,      # Read buffer size (megabytes).
         num_threads     = 2):       # Number of concurrent threads.
 
         self.tfrecord_dir       = tfrecord_dir
