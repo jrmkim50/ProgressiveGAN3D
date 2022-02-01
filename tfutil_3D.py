@@ -71,11 +71,11 @@ def create_session(config_dict=dict(), force_as_default=False):
         for field in fields[:-1]:
             obj = getattr(obj, field)
         setattr(obj, fields[-1], value)
-    session = tf.train.MonitoredSession() #tf.Session(config=config)
-    # if force_as_default:
-    #     session._default_session = session.as_default()
-    #     session._default_session.enforce_nesting = False
-    #     session._default_session.__enter__()
+    session = tf.Session(config=config)
+    if force_as_default:
+        session._default_session = session.as_default()
+        session._default_session.enforce_nesting = False
+        session._default_session.__enter__()
     return session
 
 #----------------------------------------------------------------------------
