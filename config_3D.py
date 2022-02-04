@@ -88,7 +88,7 @@ desc += '-MOUSE';            dataset = EasyDict(tfrecord_dir='mice-1-29-half-res
 # Config presets (choose one).
 
 desc += '-preset-v2-1gpu'; num_gpus = 1; sched.minibatch_base = 4; sched.minibatch_dict = {4: 1024, 8: 512, 16: 128, 32: 32, 64: 8}; sched.G_lrate_dict = {1024: 0.0015}; sched.D_lrate_dict = EasyDict(sched.G_lrate_dict); train.total_kimg = 120000
-sched.tick_kimg_dict = {4: 20, 8:20, 16:20, 32:20, 64:20}; sched.lod_training_kimg = 5; sched.lod_transition_kimg = 5
+sched.tick_kimg_dict = {4: 20, 8:20, 16:20, 32:20, 64:20}; sched.lod_training_kimg = 1; sched.lod_transition_kimg = 1
 #desc += '-preset-v2-2gpus'; num_gpus = 2; sched.minibatch_base = 8; sched.minibatch_dict = {4: 4096, 8: 2048, 16: 256, 32: 64, 64: 16, 128: 2, 256: 2}; sched.G_lrate_dict = {512: 0.0015, 1024: 0.002}; sched.D_lrate_dict = EasyDict(sched.G_lrate_dict); train.total_kimg = 120000
 
 
