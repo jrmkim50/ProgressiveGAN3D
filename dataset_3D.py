@@ -125,7 +125,7 @@ class TFRecordDataset:
                 if repeat:
                     dset = dset.repeat()
                 if prefetch_mb > 0:
-                    dset = dset.prefetch(((prefetch_mb << 20) - 1) // bytes_per_item + 1)
+                    dset = dset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE) # ((prefetch_mb << 20) - 1) // bytes_per_item + 1
                 dset = dset.batch(self._tf_minibatch_in)
                 self._tf_datasets[tfr_lod] = dset
             self._tf_iterator = tf.data.Iterator.from_structure(self._tf_datasets[0].output_types, self._tf_datasets[0].output_shapes)
