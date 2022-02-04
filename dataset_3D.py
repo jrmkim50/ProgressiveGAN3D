@@ -121,7 +121,7 @@ class TFRecordDataset:
                 dset = tf.data.Dataset.zip((dset, self._tf_labels_dataset))
                 bytes_per_item = np.prod(tfr_shape) * np.dtype(self.dtype).itemsize
                 if shuffle_mb > 0:
-                    dset = dset.shuffle(((shuffle_mb << 20) - 1) // bytes_per_item + 1)
+                    dset = dset.shuffle(100)
                 if repeat:
                     dset = dset.repeat()
                 if prefetch_mb > 0:
