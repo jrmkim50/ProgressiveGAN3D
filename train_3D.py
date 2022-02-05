@@ -93,7 +93,7 @@ class TrainingSchedule:
         lod_training_kimg       = 1000,  # 600 6000     # Thousands of real images to show before doubling the resolution.
         lod_transition_kimg     = 1000,  # 600 6000    # Thousands of real images to show when fading in new layers.
         minibatch_base          = 4,       # Maximum minibatch size, divided evenly among GPUs.
-        minibatch_dict          = {},       # Resolution-specific overrides.
+        minibatch_dict          = {},       # Resolution-specific overrides (total minibatch size).
         max_minibatch_per_gpu   = {},       # Resolution-specific maximum minibatch size per GPU.
         G_lrate_base            = 0.001, # 0.0003    # Learning rate for the generator.
         G_lrate_dict            = {},       # Resolution-specific overrides.
