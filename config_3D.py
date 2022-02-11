@@ -89,10 +89,10 @@ desc += '-MOUSE';            dataset = EasyDict(tfrecord_dir='mice-1-29-half-res
 
 desc += '-preset-v2-1gpu'; num_gpus = 1; sched.minibatch_base = 4; sched.G_lrate_dict = {1024: 0.0015}; sched.D_lrate_dict = EasyDict(sched.G_lrate_dict); train.total_kimg = 120000
 sched.minibatch_dict = {4: 64, 8: 32, 16: 16, 32: 16, 64: 4}
-sched.tick_kimg_dict = {4: 80, 8:80, 16:80, 32:60, 64:20}; sched.lod_training_kimg = 100; sched.lod_transition_kimg = 100
+sched.tick_kimg_dict = {4: 200, 8:200, 16:200, 32:100, 64:100}; sched.lod_training_kimg = 100; sched.lod_transition_kimg = 100
 
 # 128 fmap_max, 8192 fmap_base for 000-pgan-MOUSE-preset-v2-1gpu-fp32
-G.fmap_max = 256; G.fmap_base = 2048
+G.fmap_max = 256; G.fmap_base = 2048; G.latent_size = 1024
 
 #desc += '-preset-v2-2gpus'; num_gpus = 2; sched.minibatch_base = 8; sched.minibatch_dict = {4: 4096, 8: 2048, 16: 256, 32: 64, 64: 16, 128: 2, 256: 2}; sched.G_lrate_dict = {512: 0.0015, 1024: 0.002}; sched.D_lrate_dict = EasyDict(sched.G_lrate_dict); train.total_kimg = 120000
 
