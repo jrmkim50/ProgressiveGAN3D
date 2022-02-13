@@ -94,6 +94,7 @@ sched.tick_kimg_dict = {4: 200, 8:200, 16:200, 32:100, 64:100}
 # 128 fmap_max, 8192 fmap_base for 000-pgan-MOUSE-preset-v2-1gpu-fp32
 # ====== MODIFY THESE ======
 sched.lod_training_kimg = 500; sched.lod_transition_kimg = 500
+sched.G_lrate_base = 0.0003; sched.D_lrate_base = 0.0003
 G.fmap_max = 256; G.fmap_base = 2048; D.fmap_max = 256; D.fmap_base = 2048; G.latent_size = 1024
 
 #desc += '-preset-v2-2gpus'; num_gpus = 2; sched.minibatch_base = 8; sched.minibatch_dict = {4: 4096, 8: 2048, 16: 256, 32: 64, 64: 16, 128: 2, 256: 2}; sched.G_lrate_dict = {512: 0.0015, 1024: 0.002}; sched.D_lrate_dict = EasyDict(sched.G_lrate_dict); train.total_kimg = 120000
