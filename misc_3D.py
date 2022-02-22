@@ -45,6 +45,7 @@ def adjust_dynamic_range(data, drange_in, drange_out):
 import nibabel as nib
 
 def save_nifti(images, nifti_filename):
+    images = adjust_dynamic_range(images, [-1,1], [0,1])
     temp = images.squeeze()
     nifti = nib.Nifti1Image(temp.transpose(1,2,3,0).astype("float32"), np.eye(4))
     nib.save(nifti, nifti_filename)
